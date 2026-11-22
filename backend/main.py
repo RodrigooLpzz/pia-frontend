@@ -1,11 +1,27 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 import httpx
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+from database import get_db, engine, Base
+from contextlib import asynccontextmanager
+import models
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
+
+@app.get("/health/db")
+async def health_db_check(session: AsyncSession = Depends(get_db)):
+    await session.execute(text("SELECT 1"))
+    return {"db": "connected"}
 
 
 @app.get("/anime/search")
