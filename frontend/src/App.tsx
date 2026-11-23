@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { type AnimeDetail, type Anime, type WatchlistItem } from "./types"
 import type { SyntheticEvent } from "react";
 import AnimeDetailPanel from "./components/AnimeDetailPanel";
+import CollectionView from "./components/CollectionView";
 
 export default function App() {
   const [animes, setAnimes] = useState<Anime[]>([])
@@ -44,7 +45,44 @@ export default function App() {
     setSelectedAnime(data)
   }
 
+  async function handleAddToWatchlist(anime: Anime) {
+    const res = await fetch("http://localhost:8000/watchlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kitsu_id: anime.id, title: anime.canonicalTitle ?? "Unknown", image_url: anime.posterImage, status: "watch_later"})
+    });
 
+
+    if (res.ok) {
+      await loadWatchlist();
+    } else if (res.status === 409) {
+      alert("Already saved!");
+    }
+  }
+
+  const isSaved = selectedAnime ? watchlist.some((item) => item.kitsu_id === Number(selectedAnime.id)) : false;
+
+  async function handleDeleteWatchlist(kitsuId: number) {
+    const res = await fetch(`http://localhost:8000/watchlist/${kitsuId}`, {
+      method: "DELETE",
+    });
+
+    if (res.ok) {
+      await loadWatchlist();
+    } 
+  }
+
+  async function handleUpdateWatchlist(kitsuId: number, updates: { status: "watch_later" | "completed"; rating: number | null; review: string | null }) {
+    const res = await fetch(`http://localhost:8000/watchlist/${kitsuId}`, {
+      method: "PATCH", 
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates)
+    });
+
+    if (res.ok) {
+      await loadWatchlist();
+    } 
+  }
 
   return (
     <>
@@ -70,22 +108,11 @@ export default function App() {
             </div>
         ))
       }
-
-      {selectedAnime && <AnimeDetailPanel anime={selectedAnime} onClose={() => setSelectedAnime(null)} />}
+      {selectedAnime && <AnimeDetailPanel anime={selectedAnime} onClose={() => setSelectedAnime(null)} onAddWatchlist={() => handleAddToWatchlist(selectedAnime)} isSaved={isSaved}/>}
       
     </div>
     )}
-    {activeTab === "collection" && (
-      watchlist.map((watchlist_anime) => (
-          <div>
-              <h3>{watchlist_anime.title}</h3>
-              {watchlist_anime.image_url && <img src={watchlist_anime.image_url} alt={watchlist_anime.title ?? ""} />}
-              <p>{watchlist_anime.status}</p>
-              <p>{watchlist_anime.rating}</p>
-              <p>{watchlist_anime.review}</p>
-          </div>
-      ))
-    )}
+    {activeTab === "collection" && <CollectionView watchlist={watchlist} onDelete={handleDeleteWatchlist} onUpdate={handleUpdateWatchlist} /> }
     </>
   );
 
