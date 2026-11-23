@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from models import User, UserAnime, Anime
 from schemas import UserAnimeCreate, UserAnimeUpdate
 from typing import Literal
+from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -22,6 +23,9 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(CORSMiddleware, allow_origins=
+                   ["http://localhost:5173"], allow_methods=["*"], allow_headers=["*"])
 
 @app.get("/health")
 async def health_check():
