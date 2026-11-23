@@ -3,6 +3,7 @@ import { type AnimeDetail, type Anime, type WatchlistItem } from "./types"
 import type { SyntheticEvent } from "react";
 import AnimeDetailPanel from "./components/AnimeDetailPanel";
 import CollectionView from "./components/CollectionView";
+import "./App.css";
 
 export default function App() {
   const [animes, setAnimes] = useState<Anime[]>([])
@@ -85,35 +86,103 @@ export default function App() {
   }
 
   return (
-    <>
-    <header>
-      <button onClick={() => setActiveTab("catalog")}>Catalog</button>
-      <button onClick={() => setActiveTab("collection")}>My Collection</button>
-    </header>
-    {activeTab === "catalog" && (
-    <div>
-      <form onSubmit={handleSubmit}>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search..."
-        />
-        <button type="submit">Search</button>
-      </form>
+    <div className="app-shell">
+      <header className="navbar">
+        <div className="brand">
+          <span className="brand-icon">⛩</span>
+          <span>NakamaLog</span>
+        </div>
 
-      {animes.map((anime) => (
-            <div key={anime.id} onClick={() => handleSelectAnime(anime.id)}>
-              <h3>{anime.canonicalTitle}</h3>
-              {anime.posterImage && <img src={anime.posterImage} alt={anime.canonicalTitle ?? ""} />}
+        <nav className="nav-tabs">
+          <button
+            className={`nav-tab ${activeTab === "catalog" ? "active" : ""}`}
+            onClick={() => setActiveTab("catalog")}
+          >
+            Catalog
+          </button>
+          <button
+            className={`nav-tab ${activeTab === "collection" ? "active" : ""}`}
+            onClick={() => setActiveTab("collection")}
+          >
+            My Collection <span className="count-pill">{watchlist.length}</span>
+          </button>
+        </nav>
+      </header>
+
+      <main className="main-content">
+        {activeTab === "catalog" && (
+          <>
+            <div className="toolbar">
+              <form className="search-form" onSubmit={handleSubmit}>
+                <input
+                  className="search-input"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search anime by title..."
+                />
+                <button className="primary-btn" type="submit">
+                  Search
+                </button>
+              </form>
+              <span className="muted">{animes.length} results</span>
             </div>
-        ))
-      }
-      {selectedAnime && <AnimeDetailPanel anime={selectedAnime} onClose={() => setSelectedAnime(null)} onAddWatchlist={() => handleAddToWatchlist(selectedAnime)} isSaved={isSaved}/>}
-      
+
+            <div className={`catalog-layout ${selectedAnime ? "with-detail" : ""}`}>
+              <div className="card-grid">
+                {animes.map((anime) => (
+                  <div
+                    key={anime.id}
+                    className={`anime-card clickable ${
+                      selectedAnime?.id === anime.id ? "selected" : ""
+                    }`}
+                    onClick={() => handleSelectAnime(anime.id)}
+                  >
+                    <div className="card-image-wrap">
+                      {anime.posterImage && (
+                        <img
+                          src={anime.posterImage}
+                          alt={anime.canonicalTitle ?? ""}
+                        />
+                      )}
+                    </div>
+                    <div className="card-body">
+                      <h3 className="card-title">{anime.canonicalTitle}</h3>
+                      <div className="card-meta">
+                        {anime.averageRating ? (
+                          <span>
+                            <span className="star">★</span> {anime.averageRating}
+                          </span>
+                        ) : (
+                          <span className="muted">No rating</span>
+                        )}
+                        <span className="view-link">View ›</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {selectedAnime && (
+                <AnimeDetailPanel
+                  anime={selectedAnime}
+                  onClose={() => setSelectedAnime(null)}
+                  onAddWatchlist={() => handleAddToWatchlist(selectedAnime)}
+                  isSaved={isSaved}
+                />
+              )}
+            </div>
+          </>
+        )}
+
+        {activeTab === "collection" && (
+          <CollectionView
+            watchlist={watchlist}
+            onDelete={handleDeleteWatchlist}
+            onUpdate={handleUpdateWatchlist}
+          />
+        )}
+      </main>
     </div>
-    )}
-    {activeTab === "collection" && <CollectionView watchlist={watchlist} onDelete={handleDeleteWatchlist} onUpdate={handleUpdateWatchlist} /> }
-    </>
   );
 
 }
