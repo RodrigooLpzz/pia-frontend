@@ -119,6 +119,9 @@ export default function App() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search anime by title..."
+                  aria-label="Search anime by title"
+                  required
+                  minLength={2}
                 />
                 <button className="primary-btn" type="submit">
                   Search
@@ -127,10 +130,13 @@ export default function App() {
               <span className="muted">{animes.length} results</span>
             </div>
 
-            <div className={`catalog-layout ${selectedAnime ? "with-detail" : ""}`}>
+            <section
+              className={`catalog-layout ${selectedAnime ? "with-detail" : ""}`}
+              aria-label="Anime catalog"
+            >
               <div className="card-grid">
                 {animes.map((anime) => (
-                  <div
+                  <article
                     key={anime.id}
                     className={`anime-card clickable ${
                       selectedAnime?.id === anime.id ? "selected" : ""
@@ -158,7 +164,7 @@ export default function App() {
                         <span className="view-link">View ›</span>
                       </div>
                     </div>
-                  </div>
+                  </article>
                 ))}
               </div>
 
@@ -170,7 +176,7 @@ export default function App() {
                   isSaved={isSaved}
                 />
               )}
-            </div>
+            </section>
           </>
         )}
 
@@ -182,6 +188,10 @@ export default function App() {
           />
         )}
       </main>
+
+      <footer className="footer">
+        <p>NakamaLog — Anime Watchlist &amp; Ratings</p>
+      </footer>
     </div>
   );
 
