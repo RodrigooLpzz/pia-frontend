@@ -63,11 +63,30 @@ async def get_anime(q: str):
 @app.get("/anime/top")
 async def get_top_animes():
     async with httpx.AsyncClient() as client:
-        response = await client.get(f"https://kitsu.io/api/edge/trending/anime")
+        response = await client.get(
+            "https://kitsu.io/api/edge/anime",
+            params={"sort": "popularityRank", "page[limit]": 20},
+        )
         data = response.json()["data"]
         
         return format_anime_data(data)
                 
+
+@app.get("/anime/upcoming")
+async def get_upcoming_animes():
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            "https://kitsu.io/api/edge/anime",
+            params={
+                "filter[status]": "upcoming",
+                "sort": "-userCount",
+                "page[limit]": 12,
+            },
+        )
+        data = response.json()["data"]
+
+        return format_anime_data(data)
+
 
 @app.get("/anime/{kitsu_id}")
 async def get_anime_information(kitsu_id: int):
