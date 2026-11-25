@@ -7,10 +7,11 @@ import "./App.css";
 
 export default function App() {
   const [animes, setAnimes] = useState<Anime[]>([])
+  const [loadingList, setLoadingList] = useState(false)
   const [query, setQuery] = useState("")
   const [selectedAnime, setSelectedAnime] = useState<AnimeDetail | null>(null);
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([])
-  const [activeTab, setActiveTab] = useState<"catalog" | "collection">("catalog")
+  const [activeTab, setActiveTab] = useState<"catalog" | "upcoming" | "collection">("catalog")
 
   async function loadWatchlist() {
     const res = await fetch(`http://localhost:8000/watchlist`)
@@ -33,11 +34,36 @@ export default function App() {
 
   }, []);
 
+  async function handleShowTrending() {
+    setActiveTab("catalog");
+    setSelectedAnime(null);
+    setQuery("");
+    setLoadingList(true);
+    setAnimes([]);
+    const res = await fetch("http://localhost:8000/anime/top");
+    const data = await res.json();
+    setAnimes(data);
+    setLoadingList(false);
+  }
+
+  async function handleShowUpcoming() {
+    setActiveTab("upcoming");
+    setSelectedAnime(null);
+    setLoadingList(true);
+    setAnimes([]);
+    const res = await fetch("http://localhost:8000/anime/upcoming");
+    const data = await res.json();
+    setAnimes(data);
+    setLoadingList(false);
+  }
+
   async function handleSubmit(e: SyntheticEvent) {
     e.preventDefault();
+    setLoadingList(true);
     const res = await fetch(`http://localhost:8000/anime/search?q=${encodeURIComponent(query)}`)
     const data = await res.json()
     setAnimes(data)
+    setLoadingList(false);
   }
 
   async function handleSelectAnime(id: string) {
@@ -96,9 +122,15 @@ export default function App() {
         <nav className="nav-tabs">
           <button
             className={`nav-tab ${activeTab === "catalog" ? "active" : ""}`}
-            onClick={() => setActiveTab("catalog")}
+            onClick={handleShowTrending}
           >
             Catalog
+          </button>
+          <button
+            className={`nav-tab ${activeTab === "upcoming" ? "active" : ""}`}
+            onClick={handleShowUpcoming}
+          >
+            Upcoming
           </button>
           <button
             className={`nav-tab ${activeTab === "collection" ? "active" : ""}`}
@@ -110,31 +142,48 @@ export default function App() {
       </header>
 
       <main className="main-content">
-        {activeTab === "catalog" && (
+        {(activeTab === "catalog" || activeTab === "upcoming") && (
           <>
-            <div className="toolbar">
-              <form className="search-form" onSubmit={handleSubmit}>
-                <input
-                  className="search-input"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search anime by title..."
-                  aria-label="Search anime by title"
-                  required
-                  minLength={2}
-                />
-                <button className="primary-btn" type="submit">
-                  Search
-                </button>
-              </form>
-              <span className="muted">{animes.length} results</span>
-            </div>
+            {activeTab === "catalog" ? (
+              <div className="toolbar">
+                <form className="search-form" onSubmit={handleSubmit}>
+                  <input
+                    className="search-input"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search anime by title..."
+                    aria-label="Search anime by title"
+                    required
+                    minLength={2}
+                  />
+                  <button className="primary-btn" type="submit">
+                    Search
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={handleShowTrending}
+                  >
+                    Top / Trending
+                  </button>
+                </form>
+                <span className="muted">{animes.length} results</span>
+              </div>
+            ) : (
+              <div className="toolbar">
+                <h2 className="card-title">Upcoming Releases</h2>
+                <span className="muted">{animes.length} results</span>
+              </div>
+            )}
 
             <section
               className={`catalog-layout ${selectedAnime ? "with-detail" : ""}`}
               aria-label="Anime catalog"
             >
-              <div className="card-grid">
+              {loadingList ? (
+                <p className="empty-state">Loading...</p>
+              ) : (
+                <div className="card-grid">
                 {animes.map((anime) => (
                   <article
                     key={anime.id}
@@ -166,7 +215,8 @@ export default function App() {
                     </div>
                   </article>
                 ))}
-              </div>
+                </div>
+              )}
 
               {selectedAnime && (
                 <AnimeDetailPanel
